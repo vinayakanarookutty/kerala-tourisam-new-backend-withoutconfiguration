@@ -1,0 +1,16 @@
+{
+  "name": "kerala-tourisam-backend",
+  "version": "1.0.0",
+  "description": "kerala tourisam backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.3",
+    "express": "^4.21.0",
+    "nodemon": "^3.1.4"
+  }
+}
