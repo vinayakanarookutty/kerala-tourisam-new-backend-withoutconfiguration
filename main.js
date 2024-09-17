@@ -22,8 +22,18 @@ var userSchema = mongoose.Schema({
   terms:Boolean
 });
 
+var pinSchema = mongoose.Schema({
+  id:Date,
+  title: String,
+  description: String,
+  rating: Number,
+  latitude: Number,
+  longitude:Number
+});
+
 // Registering schema to mongoose
 var UserModal = mongoose.model("user", userSchema);
+var PinModal=mongoose.model("pins",pinSchema)
 router.post("/signup", async (req, res) => {
   try {
     console.log(req.body)
@@ -55,7 +65,10 @@ router.post("/login", async (req, res) => {
       if (user.password == req.body.password) {
         email = user.email;
         // res.redirect(`/home?id=${user._id}&msg=`);
-        res.status(200).json("Login Succesfull")
+        res.status(200).json({
+          message:"Login Succesfull",
+          user
+        })
       } else {
         // res.render("login", { status: "Password is Wrong" });
         res.status(404).json("Password is Wrong")
@@ -65,6 +78,24 @@ router.post("/login", async (req, res) => {
     res.status(404).json("UserName is Wrong")
   }
 });
+
+router.post("/pins", async (req, res) => {
+  console.log(req.body);
+  var pins = new PinModal(req.body);
+
+  // Save the user and wait for the operation to complete
+  await pins.save();
+  
+});
+
+router.get("/pins", async (req, res) => {
+
+  var pins = await PinModal.find({});
+  console.log(pins)
+  res.json(pins)
+ 
+});
+
 
 
 module.exports = router
