@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var mongoose = require("mongoose");
+var bcrypt = require("bcrypt");
 const Schema = mongoose.Schema;
 // MongoDB Connection to cloud database
 // mongoose.connect(
@@ -9,7 +10,7 @@ const Schema = mongoose.Schema;
 //     console.log("DB Connected")
 // });
 mongoose.connect(
-    "mongodb+srv://vinayaksukhalal:goKeral%40123@cluster0.vqk0m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    "mongodb://localhost:27017/gokeral"
   ).then(()=>{
       console.log("DB Connected")
   });
@@ -21,6 +22,16 @@ var userSchema = mongoose.Schema({
   password: String,
   terms:Boolean
 });
+
+
+var driverSchema = mongoose.Schema({
+  name: String,
+  email: String,
+  phone: Number,
+  password: String,
+  agreement:Boolean,
+  drivinglicenseNo:String
+},{strict:false});
 
 var pinSchema = mongoose.Schema({
   id:Date,
@@ -34,6 +45,7 @@ var pinSchema = mongoose.Schema({
 // Registering schema to mongoose
 var UserModal = mongoose.model("user", userSchema);
 var PinModal=mongoose.model("pins",pinSchema)
+var driverModal=mongoose.model("drivers",driverSchema)
 router.post("/signup", async (req, res) => {
   try {
     console.log(req.body)
@@ -41,9 +53,9 @@ router.post("/signup", async (req, res) => {
     var user = new UserModal({
       name: req.body.name,
       email:  req.body.email,
-      phoneNumber: req.body.phoneNumber,
+      phoneNumber: req.body.phone,
       password: req.body.password,
-      terms:req.body.terms
+      terms:req.body.agreement
     });
 
     // Save the user and wait for the operation to complete
@@ -57,6 +69,62 @@ router.post("/signup", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+router.post("/driversignup", async (req, res) => {
+  try {
+    console.log(req.body)
+    var password = await bcrypt.hash(req.body.password, 10);
+    var user = new driverModal({
+      name: req.body.name,
+      email:  req.body.email,
+      phone: req.body.phone,
+      password: password,
+      drivinglicenseNo:req.body.drivinglicenseNo,
+      agreement:req.body.agreement
+    });
+
+    // Save the user and wait for the operation to complete
+    await user.save();
+
+    // Redirect after the user is successfully saved
+    res.status(200).json("Driver Created Succesfully");
+  } catch (error) {
+    // Handle any errors that might occur during the process
+    console.error("Error creating user:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+
+router.post("/addvehicles", async (req, res) => {
+  try {
+    console.log(req.body)
+    // var password = await bcrypt.hash(req.body.password, 10);
+    // var user = new driverModal({
+    //   name: req.body.name,
+    //   email:  req.body.email,
+    //   phone: req.body.phone,
+    //   password: password,
+    //   drivinglicenseNo:req.body.drivinglicenseNo,
+    //   agreement:req.body.agreement
+    // });
+
+    // // Save the user and wait for the operation to complete
+    // await user.save();
+
+    // // Redirect after the user is successfully saved
+    // res.status(200).json("Driver Created Succesfully");
+  } catch (error) {
+    // Handle any errors that might occur during the process
+    console.error("Error creating user:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+
+
+
+
 router.post("/login", async (req, res) => {
   console.log(req.body);
   var user = await UserModal.findOne({ email: req.body.email });
@@ -79,6 +147,25 @@ router.post("/login", async (req, res) => {
   }
 });
 
+
+router.post("/driverlogin", async (req, res) => {
+  console.log(req.body);
+  var user = await driverModal.findOne({ email: req.body.email });
+  console.log(user)
+  if (user) {
+    bcrypt.compare(req.body.password, user.password).then((response) => {
+      if (response) {
+       email=user.email
+       res.status(200).json("User Found");
+      } else {
+        res.status(404).json("Password is Wrong")
+      }
+    });
+  } else {
+    res.status(404).json("UserName is Wrong")
+  }
+});
+
 router.post("/pins", async (req, res) => {
   console.log(req.body);
   var pins = new PinModal(req.body);
@@ -93,6 +180,31 @@ router.get("/pins", async (req, res) => {
   var pins = await PinModal.find({});
   console.log(pins)
   res.json(pins)
+ 
+});
+
+router.get("/userData", async (req, res) => {
+
+  var userData = await PinModal.findOne({});
+  console.log(pins)
+  res.json(pins)
+ 
+});
+router.get("/userDetails", async (req, res) => {
+  var {id}=req.query
+  console.log(id)
+  var email=req.query.id
+  var userData = await driverModal.findOne({email:email});
+  console.log(userData)
+  res.json(userData)
+ 
+});
+
+router.get("/userProfile", async (req, res) => {
+  const userIdFromQuery = req.query.user;
+  var user = await UserModal.findOne({ name:userIdFromQuery});
+  console.log(user)
+  res.json(user)
  
 });
 
