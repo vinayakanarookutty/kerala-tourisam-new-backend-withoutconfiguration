@@ -3,6 +3,8 @@ var router = express.Router();
 var mongoose = require("mongoose");
 var bcrypt = require("bcrypt");
 const multer = require('multer');
+const path = require('path');
+
 const Schema = mongoose.Schema;
 // MongoDB Connection to cloud database
 // mongoose.connect(
@@ -58,6 +60,14 @@ var driverSchema = mongoose.Schema({
   drivinglicenseNo:String
 },{strict:false});
 
+var adminSchema = mongoose.Schema({
+  name: String,
+  email: String,
+  phone: Number,
+  password: String,
+  agreement:Boolean,
+},{strict:false});
+
 var pinSchema = mongoose.Schema({
   id:Date,
   title: String,
@@ -71,6 +81,7 @@ var pinSchema = mongoose.Schema({
 var UserModal = mongoose.model("user", userSchema);
 var PinModal=mongoose.model("pins",pinSchema)
 var driverModal=mongoose.model("drivers",driverSchema)
+var adminModal=mongoose.model("admin",adminSchema)
 const Vehicle = mongoose.model('Vehicle', vehicleSchema);
 
 router.post('/addvehicles', upload.fields([
@@ -158,6 +169,30 @@ router.post("/driversignup", async (req, res) => {
   }
 });
 
+router.post("/adminsignup", async (req, res) => {
+  try {
+    console.log(req.body)
+    var password = await bcrypt.hash(req.body.password, 10);
+    var user = new adminModal({
+      name: req.body.name,
+      email:  req.body.email,
+      phone: req.body.phone,
+      password: password,
+      agreement:req.body.agreement
+    });
+
+    // Save the user and wait for the operation to complete
+    await user.save();
+
+    // Redirect after the user is successfully saved
+    res.status(200).json("Admin Created Succesfully");
+  } catch (error) {
+    // Handle any errors that might occur during the process
+    console.error("Error creating user:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 
 router.post("/addvehicles", async (req, res) => {
   try {
@@ -229,6 +264,25 @@ router.post("/driverlogin", async (req, res) => {
   }
 });
 
+
+router.post("/adminlogin", async (req, res) => {
+  console.log(req.body);
+  var user = await adminModal.findOne({ email: req.body.email });
+  console.log(user)
+  if (user) {
+    bcrypt.compare(req.body.password, user.password).then((response) => {
+      if (response) {
+       email=user.email
+       res.status(200).json("User Found");
+      } else {
+        res.status(404).json("Password is Wrong")
+      }
+    });
+  } else {
+    res.status(404).json("UserName is Wrong")
+  }
+});
+
 router.post("/pins", async (req, res) => {
   console.log(req.body);
   var pins = new PinModal(req.body);
@@ -253,11 +307,38 @@ router.get("/userData", async (req, res) => {
   res.json(pins)
  
 });
-router.get("/userDetails", async (req, res) => {
+
+router.get("/userList", async (req, res) => {
+
+  var userData = await UserModal.find({});
+  res.json(userData)
+ 
+});
+
+
+router.get("/driverList", async (req, res) => {
+
+  var driverData = await driverModal.find({});
+  res.json(driverData)
+ 
+});
+
+
+router.get("/driverDetails", async (req, res) => {
   var {id}=req.query
   console.log(id)
   var email=req.query.id
   var userData = await driverModal.findOne({email:email});
+  console.log(userData)
+  res.json(userData)
+ 
+});
+
+router.get("/adminDetails", async (req, res) => {
+  var {id}=req.query
+  console.log(id)
+  var email=req.query.id
+  var userData = await adminModal.findOne({email:email});
   console.log(userData)
   res.json(userData)
  
@@ -269,6 +350,31 @@ router.get("/userProfile", async (req, res) => {
   console.log(user)
   res.json(user)
  
+});
+
+// to get all vehicles added
+router.get("/getvehicles", async (req, res) => {
+
+  var vehiclesAdded = await Vehicle.find({});
+
+  res.status(200).json(vehiclesAdded)
+ 
+}); 
+
+router.get('/uploads/:filePath', (req, res) => {
+  console.log(req.params.filePath);
+  const filePath = path.join(__dirname, 'uploads', req.params.filePath);
+  console.log(filePath); // You might want to log the filePath instead of using json()
+  
+  // Check if the file exists before sending it
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error("File not found:", err);
+      res.status(err.status).end();
+    } else {
+      console.log("File sent:", filePath);
+    };
+  })
 });
 
 
