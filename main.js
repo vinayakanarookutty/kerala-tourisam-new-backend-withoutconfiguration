@@ -76,6 +76,19 @@ var pinSchema = mongoose.Schema({
   latitude: Number,
   longitude:Number
 });
+const bookingSchema = new mongoose.Schema({
+  origin: String,
+  destination: String,
+  distance: Number,
+  duration: Number,
+  driverId: String,
+  driverName: String,
+  driverRating: Number,
+  date: { type: Date, default: Date.now },
+});
+
+// Booking Model
+const Booking = mongoose.model('Booking', bookingSchema);
 
 // Registering schema to mongoose
 var UserModal = mongoose.model("user", userSchema);
@@ -375,6 +388,26 @@ router.get('/uploads/:filePath', (req, res) => {
       console.log("File sent:", filePath);
     };
   })
+});
+
+router.post('/bookings', async (req, res) => {
+  try {
+    const newBooking = new Booking(req.body);
+    await newBooking.save();
+    res.status(201).json(newBooking);
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving booking', error });
+  }
+});
+
+// Get all bookings endpoint
+router.get('/bookings', async (req, res) => {
+  try {
+    const bookings = await Booking.find();
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching bookings', error });
+  }
 });
 
 
