@@ -87,6 +87,21 @@ const bookingSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
+
+
+const QuotationSchema = new mongoose.Schema({
+  customerName: { type: String },
+  vehicleType: { type: String},
+  bookingDatefrom: { type: Date },
+  bookingDateto: { type: Date },
+  price: { type: Number },
+  remarks: { type: String, default: '' },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const quatationModel = mongoose.model('Quotation', QuotationSchema);
+
+
 // Booking Model
 const Booking = mongoose.model('Booking', bookingSchema);
 
@@ -154,6 +169,28 @@ router.post("/signup", async (req, res) => {
     // Handle any errors that might occur during the process
     console.error("Error creating user:", error);
     res.status(500).send("Internal Server Error");
+  }
+});
+
+
+router.post('/quatation', async (req, res) => {
+  try {
+    const { customerName,  bookingDatefrom, bookingDateto, price, remarks } = req.body;
+
+    const newQuotation = new quatationModel({
+      customerName,
+      bookingDatefrom,
+      bookingDateto,
+  
+      price,
+      remarks,
+    });
+
+    await newQuotation.save();
+    res.status(201).json({ message: 'Quotation saved successfully' });
+  } catch (error) {
+    console.error('Error saving quotation:', error);
+    res.status(500).json({ message: 'Error saving quotation' });
   }
 });
 
@@ -325,6 +362,13 @@ router.get("/userList", async (req, res) => {
 
   var userData = await UserModal.find({});
   res.json(userData)
+ 
+});
+
+router.get("/quatations", async (req, res) => {
+
+  var quatation = await quatationModel.find({});
+  res.json(quatation)
  
 });
 
