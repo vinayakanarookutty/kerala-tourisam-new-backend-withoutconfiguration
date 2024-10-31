@@ -211,7 +211,10 @@ router.post("/driversignup", async (req, res) => {
     await user.save();
 
     // Redirect after the user is successfully saved
-    res.status(200).json("Driver Created Succesfully");
+    res.status(200).json({
+      message:"Driver Created Succesfully",
+      user
+    })
   } catch (error) {
     // Handle any errors that might occur during the process
     console.error("Error creating user:", error);
@@ -304,7 +307,10 @@ router.post("/driverlogin", async (req, res) => {
     bcrypt.compare(req.body.password, user.password).then((response) => {
       if (response) {
        email=user.email
-       res.status(200).json("User Found");
+        res.status(200).json({
+          message:"User Found",
+          user
+        })
       } else {
         res.status(404).json("Password is Wrong")
       }
@@ -383,10 +389,10 @@ router.get("/driverList", async (req, res) => {
 
 router.get("/driverDetails", async (req, res) => {
   var {id}=req.query
-  console.log(id)
+ 
   var email=req.query.id
   var userData = await driverModal.findOne({email:email});
-  console.log(userData)
+ 
   res.json(userData)
  
 });
@@ -453,7 +459,33 @@ router.get('/bookings', async (req, res) => {
     res.status(500).json({ message: 'Error fetching bookings', error });
   }
 });
+router.post("/updateDriver", async (req, res) => {
+  try {
+    const filter = { email: req.body.mail };
+    let data;
 
+    if (req.body.imageUrl) {
+      data = { imageUrl: req.body.imageUrl };
+    } else {
+      data = { personalInformation: { ...req.body } };
+    }
+
+    const result = await driverModal.findOneAndUpdate(filter, data, {
+      new: true,
+      upsert: true,
+    });
+
+    if (!result) {
+      return res.status(404).json({ message: "Driver not found or no update made." });
+    }
+
+    console.log(result);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 module.exports = router

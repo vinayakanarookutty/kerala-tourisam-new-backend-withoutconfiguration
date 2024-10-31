@@ -8,7 +8,8 @@ app.use(cors());
 
 // Parse incoming request bodies
 app.use(bodyparser.urlencoded({ extended: true }));
-app.use(bodyparser.json());
+app.use(bodyparser.json({ limit: '10mb' })); // Adjust the limit as needed
+app.use(bodyparser.urlencoded({ limit: '10mb', extended: true }));
 
 var main = require("./main");
 
