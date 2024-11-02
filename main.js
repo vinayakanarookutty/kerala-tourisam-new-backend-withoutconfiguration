@@ -4,6 +4,7 @@ var mongoose = require("mongoose");
 var bcrypt = require("bcrypt");
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const Schema = mongoose.Schema;
 // MongoDB Connection to cloud database
@@ -38,7 +39,7 @@ const vehicleSchema = new mongoose.Schema({
   Vehicle_Insurance_Proof: String, // File path
   Proof_Of_Address: String, // File path
   Police_Clearance_Certificate: String, // File path
-});
+},{strict:false});
 
 
 //Schema of the User
@@ -111,40 +112,99 @@ var PinModal=mongoose.model("pins",pinSchema)
 var driverModal=mongoose.model("drivers",driverSchema)
 var adminModal=mongoose.model("admin",adminSchema)
 const Vehicle = mongoose.model('Vehicle', vehicleSchema);
+// Configure multer for file uploads
 
+
+// Route to add a new vehicle
 router.post('/addvehicles', upload.fields([
-  { name: 'Driving_Licence', maxCount: 1 },
-  { name: 'Vehicle_Insurance_Proof', maxCount: 1 },
-  { name: 'Proof_Of_Address', maxCount: 1 },
-  { name: 'Police_Clearance_Certificate', maxCount: 1 }
+  { name: 'Driving_Licence' },
+  { name: 'Vehicle_Insurance_Proof' },
+  { name: 'Proof_Of_Address' },
+  { name: 'Police_Clearance_Certificate' },
+  { name: 'vehicleImages' }
 ]), async (req, res) => {
   try {
-    const {
-      make,
-      model,
-      year,
-      licensePlate,
-      type
-    } = req.body;
+    const { body, files } = req;
 
-    const newVehicle = new Vehicle({
-      make,
-      model,
-      year,
-      licensePlate,
-      type,
-      Driving_Licence: req.files['Driving_Licence'] ? req.files['Driving_Licence'][0].path : null,
-      Vehicle_Insurance_Proof: req.files['Vehicle_Insurance_Proof'] ? req.files['Vehicle_Insurance_Proof'][0].path : null,
-      Proof_Of_Address: req.files['Proof_Of_Address'] ? req.files['Proof_Of_Address'][0].path : null,
-      Police_Clearance_Certificate: req.files['Police_Clearance_Certificate'] ? req.files['Police_Clearance_Certificate'][0].path : null,
+    // Process documents
+    const documents = {
+      Driving_Licence: files.Driving_Licence?.[0] || null,
+      Vehicle_Insurance_Proof: files.Vehicle_Insurance_Proof?.[0] || null,
+      Proof_Of_Address: files.Proof_Of_Address?.[0] || null,
+      Police_Clearance_Certificate: files.Police_Clearance_Certificate?.[0] || null
+    };
+
+    // Create new vehicle document in database
+    const vehicle = new Vehicle({
+      ...body,
+      documents: documents,
+      vehicleImages: files.vehicleImages || []
     });
 
-    await newVehicle.save();
-
-    res.json({ message: 'Vehicle added successfully!' });
+    await vehicle.save();
+    res.status(201).json({ message: 'Vehicle added successfully!' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error adding vehicle', error });
+    console.error('Error adding vehicle:', error);
+    res.status(500).json({ error: 'Failed to add vehicle.' });
+  }
+});
+
+// Route to update an existing vehicle
+
+router.put('/updatevehicle/:id', upload.fields([
+  { name: 'Driving_Licence' },
+  { name: 'Vehicle_Insurance_Proof' },
+  { name: 'Proof_Of_Address' },
+  { name: 'Police_Clearance_Certificate' },
+  { name: 'vehicleImages' }
+]), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { body, files } = req;
+
+    // Find the existing vehicle document
+    const existingVehicle = await Vehicle.findById(id);
+    if (!existingVehicle) {
+      return res.status(404).json({ error: 'Vehicle not found.' });
+    }
+
+    // Prepare the update payload
+    const updatePayload = {
+      ...body,
+      documents: {
+        Driving_Licence: files.Driving_Licence?.[0] || existingVehicle.documents.Driving_Licence,
+        Vehicle_Insurance_Proof: files.Vehicle_Insurance_Proof?.[0] || existingVehicle.documents.Vehicle_Insurance_Proof,
+        Proof_Of_Address: files.Proof_Of_Address?.[0] || existingVehicle.documents.Proof_Of_Address,
+        Police_Clearance_Certificate: files.Police_Clearance_Certificate?.[0] || existingVehicle.documents.Police_Clearance_Certificate
+      },
+      vehicleImages: files.vehicleImages || existingVehicle.vehicleImages || []
+    };
+
+    // Delete existing files if they are being replaced
+    const deleteFile = (file) => {
+      if (file) {
+        const filePath = path.join(__dirname, '..', file.path); // Adjust the path as necessary
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error(`Error deleting file: ${filePath}`, err);
+          }
+        });
+      }
+    };
+
+    // Delete old document files
+    deleteFile(existingVehicle.documents.Driving_Licence);
+    deleteFile(existingVehicle.documents.Vehicle_Insurance_Proof);
+    deleteFile(existingVehicle.documents.Proof_Of_Address);
+    deleteFile(existingVehicle.documents.Police_Clearance_Certificate);
+
+    // Update the vehicle document
+    const updatedVehicle = await Vehicle.findByIdAndUpdate(id, updatePayload, { new: true });
+
+    res.status(200).json({ message: 'Vehicle updated successfully!', vehicle: updatedVehicle });
+  } catch (error) {
+    console.error('Error updating vehicle:', error);
+    res.status(500).json({ error: 'Failed to update vehicle.' });
   }
 });
 
