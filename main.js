@@ -208,6 +208,54 @@ router.put('/updatevehicle/:id', upload.fields([
   }
 });
 
+
+
+
+router.delete('/deletevehicle/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the vehicle details by ID
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Vehicle not found.' });
+    }
+
+    // List of files to delete
+    const filesToDelete = [
+      vehicle.documents.Driving_Licence.path,
+      vehicle.documents.Vehicle_Insurance_Proof.path,
+      vehicle.documents.Proof_Of_Address.path,
+      vehicle.documents.Police_Clearance_Certificate.path,
+      ...vehicle.vehicleImages.map(img => img.path) // Assuming vehicleImages contains file paths
+    ];
+
+    // Attempt to delete each file
+    filesToDelete.forEach(filePath => {
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.warn(`Error deleting file ${filePath}:`, err);
+          } else {
+            console.log(`Successfully deleted file ${filePath}`);
+          }
+        });
+      } else {
+        console.warn(`File not found, skipping deletion: ${filePath}`);
+      }
+    });
+
+    // Remove vehicle document from the database
+    await Vehicle.findByIdAndDelete(id);
+
+    res.status(200).json({ message: 'Vehicle and associated files deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting vehicle:', error);
+    res.status(500).json({ error: 'Failed to delete vehicle.' });
+  }
+});
+
+
 router.post("/signup", async (req, res) => {
   try {
     console.log(req.body)
