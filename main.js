@@ -49,7 +49,7 @@ var userSchema = mongoose.Schema({
   phoneNumber: Number,
   password: String,
   terms:Boolean
-});
+},{strict:false});
 
 
 var driverSchema = mongoose.Schema({
@@ -86,7 +86,7 @@ const bookingSchema = new mongoose.Schema({
   driverName: String,
   driverRating: Number,
   date: { type: Date, default: Date.now },
-});
+},{strict:false});
 
 
 
@@ -272,7 +272,10 @@ router.post("/signup", async (req, res) => {
     await user.save();
 
     // Redirect after the user is successfully saved
-    res.status(200).json("User Created Succesfully");
+    res.status(200).json({
+      message:"User Created Succesfully",
+      user
+    })
   } catch (error) {
     // Handle any errors that might occur during the process
     console.error("Error creating user:", error);
@@ -505,6 +508,27 @@ router.get("/driverDetails", async (req, res) => {
  
 });
 
+router.get("/userDetails", async (req, res) => {
+  var {id}=req.query
+ 
+  var email=req.query.id
+  var userData = await UserModal.findOne({email:email});
+ 
+  res.json(userData)
+ 
+});
+
+
+router.get("/userDetails", async (req, res) => {
+  var {id}=req.query
+ 
+  var email=req.query.id
+  var userData = await UserModal.findOne({email:email});
+ 
+  res.json(userData)
+ 
+});
+
 router.get("/adminDetails", async (req, res) => {
   var {id}=req.query
   console.log(id)
@@ -525,7 +549,15 @@ router.get("/userProfile", async (req, res) => {
 
 // to get all vehicles added
 router.get("/getvehicles", async (req, res) => {
+  var email=req.query.id
+  var vehiclesAdded = await Vehicle.find({email:email});
 
+  res.status(200).json(vehiclesAdded)
+ 
+}); 
+
+router.get("/getallvehicles", async (req, res) => {
+ 
   var vehiclesAdded = await Vehicle.find({});
 
   res.status(200).json(vehiclesAdded)
@@ -567,6 +599,7 @@ router.get('/bookings', async (req, res) => {
     res.status(500).json({ message: 'Error fetching bookings', error });
   }
 });
+
 router.post("/updateDriver", async (req, res) => {
   try {
     const filter = { email: req.body.mail };
@@ -585,6 +618,35 @@ router.post("/updateDriver", async (req, res) => {
 
     if (!result) {
       return res.status(404).json({ message: "Driver not found or no update made." });
+    }
+
+    console.log(result);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+router.post("/updateUser", async (req, res) => {
+  try {
+    const filter = { email: req.body.mail };
+    let data;
+
+    if (req.body.imageUrl) {
+      data = { imageUrl: req.body.imageUrl };
+    } else {
+      data = { personalInformation: { ...req.body } };
+    }
+
+    const result = await UserModal.findOneAndUpdate(filter, data, {
+      new: true,
+      upsert: true,
+    });
+
+    if (!result) {
+      return res.status(404).json({ message: "User not found or no update made." });
     }
 
     console.log(result);
