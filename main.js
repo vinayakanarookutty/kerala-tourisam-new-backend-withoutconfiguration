@@ -8,16 +8,16 @@ const fs = require('fs');
 
 const Schema = mongoose.Schema;
 // MongoDB Connection to cloud database
-// mongoose.connect(
-//   "mongodb+srv://vinayaksukhalal:12344321@cluster0.mcgbpy6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-// ).then(()=>{
-//     console.log("DB Connected")
-// });
 mongoose.connect(
-    "mongodb://localhost:27017/gokeral"
-  ).then(()=>{
-      console.log("DB Connected")
-  });
+  "mongodb+srv://vinayaksukhalal:12344321@cluster0.mcgbpy6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+).then(()=>{
+    console.log("DB Connected")
+});
+// mongoose.connect(
+//     "mongodb://localhost:27017/gokeral"
+//   ).then(()=>{
+//       console.log("DB Connected")
+//   });
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
       cb(null, 'uploads/'); // Directory to save uploaded files
