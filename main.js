@@ -11,7 +11,7 @@ const fs = require('fs');
 const Schema = mongoose.Schema;
 // MongoDB Connection to cloud database
 mongoose.connect(
-  "mongodb+srv://vinayaksukhalal:12344321@cluster0.mcgbpy6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  "mongodb+srv://vinayaksukhalal:123321@cluster0.vqk0m.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 ).then(()=>{
     console.log("DB Connected")
 });
