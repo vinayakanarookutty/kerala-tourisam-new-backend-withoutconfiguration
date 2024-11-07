@@ -5,7 +5,7 @@ const cors = require("cors");
 
 // More permissive CORS configuration
 app.use(cors({
-  origin: '*',  // Be careful with this in production
+  origin: ['http://localhost:5173', 'https://d1w5k4nn5lbs5k.cloudfront.net'], 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   credentials: true,
